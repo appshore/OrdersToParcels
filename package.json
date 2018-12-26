@@ -1,0 +1,25 @@
+{
+  "name": "wingbybmi",
+  "version": "0.1.0",
+  "description": "Test technique Wing",
+  "author": "BMI",
+  "license": "MIT",
+  "main": "dist",
+  "dependencies": {
+    "node-fetch": "^2.3.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^5.11.0",
+    "nodemon": "^1.18.9"
+  },
+  "scripts": {
+    "dev": "nodemon -w src --exec \"babel-node src\"",
+    "build": "babel src -s -D -d dist",
+    "prestart": "npm run -s build",
+    "start": "node dist",
+    "test": "eslint src"
+  }
+}
