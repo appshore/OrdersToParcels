@@ -28,13 +28,6 @@ export const itemsByOrder = (order, items) => {
 
 // compute the parcels per order
 export const parcelsByOrder = order => {
-  const priceWeight = [
-    { min: 0.0, max: 1.0, price: 1 },
-    { min: 1.0, max: 5.0, price: 2 },
-    { min: 5.0, max: 10.0, price: 3 },
-    { min: 10.0, max: 20.0, price: 5 },
-    { min: 20.0, max: 30.0, price: 10 }
-  ]
 
   // sort the order by item weight
   // true => lighter to heavier
@@ -45,10 +38,13 @@ export const parcelsByOrder = order => {
   let parcels = order.items.reduce((acc, item) => {
     let found = false
 
+    // string formatted weight converted to float
+    item.weight = parseFloat(item.weight)
+
     // map each parcel to find room for a item
     acc.every(ac => {
       // check that the weight no more 30
-      let newWeight = ac.weight + parseFloat(item.weight)
+      let newWeight = ac.weight + item.weight
       if (newWeight <= 30.0) {
         // add item to an existing parcel
         found = true
@@ -57,10 +53,10 @@ export const parcelsByOrder = order => {
         ac.quantity++
         // check if same item already exist in the parcel
         let idx = ac.items.findIndex(a => a.id === item.id)
-        if( idx > -1) {
+        if (idx > -1) {
           ac.items[idx].quantity++
         } else {
-          ac.items.push({...item, quantity: 1})
+          ac.items.push({ ...item, quantity: 1 })
         }
         return false
       }
@@ -73,16 +69,26 @@ export const parcelsByOrder = order => {
         order_id: order.id,
         quantity: 1,
         weight: parseFloat(item.weight),
-        items: [{...item, quantity: 1}]
+        items: [{ ...item, quantity: 1 }]
       })
     }
     return acc
   }, [])
 
-  // determine revenue by parcel
+  const priceWeight = [
+    { min: 0.0, max: 1.0, price: 1 },
+    { min: 1.0, max: 5.0, price: 2 },
+    { min: 5.0, max: 10.0, price: 3 },
+    { min: 10.0, max: 20.0, price: 5 },
+    { min: 20.0, max: 30.0, price: 10 }
+  ]
+
   parcels.map(p => {
+    // determine revenue by parcel according priceWeight
     let pw = priceWeight.find(pw => pw.min < p.weight && p.weight <= pw.max)
     p.revenue = pw.price
+    // format weight with 2 decimals
+    p.weight = parseFloat(p.weight.toFixed(2))
   })
 
   return parcels
@@ -98,8 +104,7 @@ export const weightByOrder = entities =>
 export const revenueByOrder = parcels =>
   parcels.reduce((acc, parcel) => acc + parseFloat(parcel.revenue), 0.0)
 
-
-// main fct that process all orders
+// main fct that process all
 export const processOrders = async (orders, items) => {
   // map the orders array, async is mandatory to handle
   // the fetch of uniqids from server
@@ -114,7 +119,7 @@ export const processOrders = async (orders, items) => {
     // so we wait for them to resolve
     parcelsOrder = await setParcelsUniqId(parcelsOrder)
 
-    // compute order global information 
+    // compute order global information
     let itemsQty = itemsOrder.items.length
     let parcelsQty = parcelsOrder.length
     let weight = weightByOrder(parcelsOrder)
@@ -142,11 +147,11 @@ export const processOrders = async (orders, items) => {
 
     return {
       id: order.id,
-      date:order.date,
+      date: order.date,
       itemsQty,
       parcelsQty,
       revenue,
-      weight: weight.toFixed(2),
+      weight: parseFloat(weight.toFixed(2)),
       parcels: parcelsOrder
     }
   })
