@@ -1,25 +1,28 @@
 {
-  "name": "wingbybmi",
+  "name": "orders",
   "version": "0.1.0",
-  "description": "Test technique Wing",
-  "author": "BMI",
+  "description": "Processing of orders",
+  "author": "AppShore Inc",
   "license": "MIT",
   "main": "dist",
   "dependencies": {
+    "async": "^2.6.1",
     "node-fetch": "^2.3.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
-    "eslint": "^5.11.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "eslint": "^5.11.1",
     "nodemon": "^1.18.9"
   },
   "scripts": {
     "dev": "nodemon -w src --exec \"babel-node src\"",
     "build": "babel src -s -D -d dist",
     "prestart": "npm run -s build",
-    "start": "node dist",
-    "test": "eslint src"
+    "start": "node dist"
   }
 }

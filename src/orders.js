@@ -1,7 +1,6 @@
-import fetch from 'node-fetch'
-
 import { orders } from '../data/orders.json'
 
+import { setParcelsUniqId } from './parcels'
 import { sortByDate, sortByNumber } from './sort'
 
 // list all orders
@@ -11,19 +10,15 @@ export const listOrders = (ordersSort = true) =>
 
 // retrieve each item in an order
 export const itemsByOrder = (order, items) => {
-  let its = []
-
-  // build an array composed of each item
-  order.items.map(o => {
-    for (let i = 0; i < o.quantity; i++) {
-      its.push(items.find(i => i.id === o.item_id))
+  // retrieve each item in the order from the items list
+  let its = order.items.reduce((acc, item) => {
+    let it = items.find(is => is.id === item.item_id)
+    for (let i = 0; i < item.quantity; i++) {
+      acc = acc.concat(it)
     }
-  })
+    return acc
+  }, [])
 
-  // sort the array by weight
-  its.sort((a, b) => sortByNumber(a.weight, b.weight, false))
-
-  // return for each order the complete item array
   return {
     id: order.id,
     date: order.date,
@@ -33,76 +28,128 @@ export const itemsByOrder = (order, items) => {
 
 // compute the parcels per order
 export const parcelsByOrder = order => {
-  let parcels = []
+  const priceWeight = [
+    { min: 0.0, max: 1.0, price: 1 },
+    { min: 1.0, max: 5.0, price: 2 },
+    { min: 5.0, max: 10.0, price: 3 },
+    { min: 10.0, max: 20.0, price: 5 },
+    { min: 20.0, max: 30.0, price: 10 }
+  ]
 
-  // combine the duplicate items and add their quantity
-  parcels = order.items.reduce((arr, item) => {
+  // sort the order by item weight
+  // true => lighter to heavier
+  // if applied it will change the number of parcels and the potential revenue
+  order.items.sort((a, b) => sortByNumber(a.weight, b.weight, false))
+
+  // split the items into parcels
+  let parcels = order.items.reduce((acc, item) => {
     let found = false
-    arr.map((a, i) => {
-      let newWeight = arr[i].weight + parseFloat(item.weight)
-      if (newWeight <= 30) {
+
+    // map each parcel to find room for a item
+    acc.every(ac => {
+      // check that the weight no more 30
+      let newWeight = ac.weight + parseFloat(item.weight)
+      if (newWeight <= 30.0) {
         // add item to an existing parcel
         found = true
-        arr[i].weight = newWeight
-        arr[i].items.push(item)
+        // add weight of item
+        ac.weight = newWeight
+        ac.quantity++
+        // check if same item already exist in the parcel
+        let idx = ac.items.findIndex(a => a.id === item.id)
+        if( idx > -1) {
+          ac.items[idx].quantity++
+        } else {
+          ac.items.push({...item, quantity: 1})
+        }
+        return false
       }
+      return true
     })
+
     if (!found) {
       // create a new parcel
-      fetch('https://helloacm.com/api/random/?n=15')
-        .then(response => response.text())
-        .then(res =>
-          arr.push({
-            order_id: order.id,
-            parcelNbr: res,
-            weight: parseFloat(item.weight),
-            items: [item]
-          })
-        )
-        .catch(error => console.error('Fetch error', error))
+      acc.push({
+        order_id: order.id,
+        quantity: 1,
+        weight: parseFloat(item.weight),
+        items: [{...item, quantity: 1}]
+      })
     }
-    return arr
+    return acc
   }, [])
+
+  // determine revenue by parcel
+  parcels.map(p => {
+    let pw = priceWeight.find(pw => pw.min < p.weight && p.weight <= pw.max)
+    p.revenue = pw.price
+  })
 
   return parcels
 }
 
-// compute total revenue, weight and parcels for each order
-export const summaryByOrder = parcels => {
-  let revenue = 0
-  let weight = 0
+// Weight by order
+// work with items or parcels
+export const weightByOrder = entities =>
+  entities.reduce((acc, entity) => acc + parseFloat(entity.weight), 0.0)
 
-  let priceWeight = [
-    { min: 0, max: 1, price: 1 },
-    { min: 1, max: 5, price: 2 },
-    { min: 5, max: 10, price: 3 },
-    { min: 10, max: 20, price: 5 },
-    { min: 20, max: 30, price: 10 }
-  ]
+// Revenue by order
+// sum of each parcel
+export const revenueByOrder = parcels =>
+  parcels.reduce((acc, parcel) => acc + parseFloat(parcel.revenue), 0.0)
 
-  // build an array composed of each item
-  parcels.map(p => {
-    priceWeight.map(pw => {
-      if (pw.min > p.weight && p.weight <= pw.max) {
-        revenue += pw.price
-        weight += p.weight
-      }
-    })
-  })
 
-  // return for each order the complete item array
-  return {
-    revenue,
-    weight,
-    parcels
-  }
-}
+// main fct that process all orders
+export const processOrders = async (orders, items) => {
+  // map the orders array, async is mandatory to handle
+  // the fetch of uniqids from server
+  let promises = orders.map(async order => {
+    // retrieve each unique item
+    let itemsOrder = itemsByOrder(order, items)
 
-export const processOrders = (orders, items) => {
-  orders.map(o => {
-    let itemsOrder = itemsByOrder(o, items)
+    // define the parcels for each order
     let parcelsOrder = parcelsByOrder(itemsOrder)
-    let { revenue, weight, parcels } = summaryByOrder(parcelsOrder)
-    console.log('order ', o.id, revenue, weight, parcels.length, parcels)
+
+    // setParcelsUniqId return an array of promises
+    // so we wait for them to resolve
+    parcelsOrder = await setParcelsUniqId(parcelsOrder)
+
+    // compute order global information 
+    let itemsQty = itemsOrder.items.length
+    let parcelsQty = parcelsOrder.length
+    let weight = weightByOrder(parcelsOrder)
+    let revenue = revenueByOrder(parcelsOrder)
+
+    /*
+    // uncomment to have a console output of each order
+    console.log(`\nOrder: ${order.id} date: ${order.date}`)
+    console.log(
+      `\tParcels: ${parcelsQty}`.padEnd(20),
+      `Items: ${itemsQty}`.padEnd(20),
+      `Revenue: ${revenue}`.padEnd(20),
+      `Weight: ${weight.toFixed(2)}`.padEnd(20)
+    )
+    parcelsOrder.map(p => {
+      console.log(
+        `\t${p.parcel_id}`.padEnd(20),
+        `${p.quantity}`.padEnd(20),
+        `${p.revenue}`.padEnd(20),
+        `${p.weight.toFixed(2)}`.padEnd(20)
+      )
+      p.items.map(i => console.log(`\t\t${i.quantity} * ${i.name}`.padEnd(25),` ${i.weight}`.padEnd(10)))
+    })
+    */
+
+    return {
+      id: order.id,
+      date:order.date,
+      itemsQty,
+      parcelsQty,
+      revenue,
+      weight: weight.toFixed(2),
+      parcels: parcelsOrder
+    }
   })
+
+  return await Promise.all(promises)
 }
