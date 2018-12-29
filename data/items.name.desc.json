@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "5bb619e4911037797edae511",
+      "name": "TV",
+      "weight": "20.8"
+    },
+    {
+      "id": "5bb619e49593e5d3cbaa0b52",
+      "name": "Flowers",
+      "weight": "1.5"
+    },
+    {
+      "id": "5bb619e4ebdccb9218aa9dcb",
+      "name": "Chair",
+      "weight": "8.4"
+    }
+  ]
+}

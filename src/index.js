@@ -1,28 +1,38 @@
 import util from 'util'
-import { listItems } from './items'
-import { listOrders, processOrders } from './orders'
 
-let items = listItems()
+import { items } from '../data/items.json'
+import { orders } from '../data/orders.json'
+
+import { sortItemsByName, sortItemsByWeight } from './items'
+import { processOrders, sortOrdersByDate } from './orders'
+
+// select the sort property and rank (true = ascending)
+// let items = sortItemsByName(items, false)
+let sortedItems = sortItemsByWeight(items, true)
+
 /*
 // uncomment to see all items before processing
-console.log(`${items.length} Items sorted by weigth descending`)
+console.log(`${sortedItems.length} Items sorted by weigth descending`)
 console.log('Item name'.padEnd(30), 'Weigth'.padEnd(10), '\n')
-items.map(i => console.log(i.name.padEnd(30), i.weight.padStart(8)))
+sortedItems.map(i => console.log(i.name.padEnd(30), i.weight.padStart(8)))
 */
 
-let orders = listOrders()
+
+// select the sort property and rank (true = ascending)
+let sortedOrders = sortOrdersByDate(orders, true)
 /*
 // uncomment to see all orders before processing
-console.log(`\n\n${orders.length} Orders sorted by date clockwise`)
+console.log(`\n\n${sortedOrders.length} Orders sorted by date clockwise`)
 console.log('Order id'.padEnd(30), 'Date'.padEnd(30), '\n')
-orders.map(o => {
+sortedOrders.map(o => {
   console.log(o.id.padEnd(30), o.date.padEnd(30))
 })
 */
 
-console.log(`Processing of ${orders.length} orders in progress`)
 
-// this async function will out an array of all processed orders
-processOrders(orders, items).then(orders =>
-  console.log(util.inspect(orders, { colors: true, depth: null }))
+console.log(`Processing of ${sortedOrders.length} orders in progress`)
+
+// this async function will output an array of all processed orders
+processOrders(sortedOrders, sortedItems).then(processedOrders =>
+  console.log(util.inspect(processedOrders, { colors: true, depth: null }))
 )

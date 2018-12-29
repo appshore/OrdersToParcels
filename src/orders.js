@@ -1,11 +1,9 @@
-import { orders } from '../data/orders.json'
-
 import { setParcelsUniqId } from './parcels'
 import { sortByDate, sortByNumber } from './sort'
 
 // list all orders
 // ordersSort = true => clockwise
-export const listOrders = (ordersSort = true) =>
+export const sortOrdersByDate = (orders, ordersSort = true) =>
   orders.sort((a, b) => sortByDate(a.date, b.date, ordersSort))
 
 // retrieve each item in an order
