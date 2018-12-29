@@ -1,15 +1,18 @@
 Getting Started
 ---------------
 
-The application will output a JSON object of all processed orders
+The application will output a list of processed orders
 
 ```sh
 # Install dependencies
 npm install
 
-# Start development live-reload server
+# Start development with hot reloading
 npm run dev
 
-# Start production server:
+# Start test suite
+npm run test
+
+# Build production and start
 npm start
 ```
