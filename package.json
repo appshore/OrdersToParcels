@@ -6,8 +6,8 @@
   "license": "MIT",
   "main": "dist",
   "dependencies": {
-    "async": "^2.6.1",
-    "node-fetch": "^2.3.0"
+    "node-fetch": "^2.3.0",
+    "util": "^0.11.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

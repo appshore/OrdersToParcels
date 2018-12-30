@@ -16,3 +16,5 @@ npm run test
 # Build production and start
 npm start
 ```
+
+Check https://github.com/appshore/OrdersToParcelsMicroservices to see the same functions running as microservices
