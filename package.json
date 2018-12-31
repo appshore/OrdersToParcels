@@ -2,8 +2,12 @@
   "name": "orders",
   "version": "0.1.0",
   "description": "Processing of orders",
-  "author": "AppShore Inc",
   "license": "MIT",
+  "author": "bmi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appshore/OrdersToParcels"
+  },
   "main": "dist",
   "dependencies": {
     "node-fetch": "^2.3.0",
